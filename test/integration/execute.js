@@ -1,12 +1,13 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const test = require('tap').test;
+const test = require("tap").test;
 
-const log = require('../../src/util/log');
-const makeTestStorage = require('../fixtures/make-test-storage');
-const readFileToBuffer = require('../fixtures/readProjectFile').readFileToBuffer;
-const VirtualMachine = require('../../src/index');
+const log = require("../../src/util/log");
+const makeTestStorage = require("../fixtures/make-test-storage");
+const readFileToBuffer = require("../fixtures/readProjectFile")
+    .readFileToBuffer;
+const VirtualMachine = require("../../src/index");
 
 /**
  * @fileoverview Transform each sb2 in fixtures/execute into a test.
@@ -27,7 +28,7 @@ const VirtualMachine = require('../../src/index');
  * been reached.
  */
 
-const whenThreadsComplete = (t, vm, timeLimit = 2000) => (
+const whenThreadsComplete = (t, vm, timeLimit = 2000) =>
     // When the number of threads reaches 0 the test is expected to be complete.
     new Promise((resolve, reject) => {
         const intervalId = setInterval(() => {
@@ -44,7 +45,7 @@ const whenThreadsComplete = (t, vm, timeLimit = 2000) => (
         }, 50);
 
         const timeoutId = setTimeout(() => {
-            reject(new Error('time limit reached'));
+            reject(new Error("time limit reached"));
         }, timeLimit);
 
         // Clear the interval to allow the process to exit
@@ -53,17 +54,16 @@ const whenThreadsComplete = (t, vm, timeLimit = 2000) => (
             clearInterval(intervalId);
             clearTimeout(timeoutId);
         });
-    })
-);
+    });
 
-const executeDir = path.resolve(__dirname, '../fixtures/execute');
+const executeDir = path.resolve(__dirname, "../fixtures/execute");
 
 fs.readdirSync(executeDir)
-    .filter(uri => uri.endsWith('.sb2'))
-    .forEach(uri => {
-        test(uri, t => {
+    .filter((uri) => uri.endsWith(".sb2"))
+    .forEach((uri) => {
+        test(uri, (t) => {
             // Disable logging during this test.
-            log.suggest.deny('vm', 'error');
+            log.suggest.deny("vm", "error");
             t.tearDown(() => log.suggest.clear());
 
             // Map string messages to tap reporting methods. This will be used
@@ -71,28 +71,30 @@ fs.readdirSync(executeDir)
             let didPlan;
             let didEnd;
             const reporters = {
-                comment (message) {
+                comment(message) {
                     t.comment(message);
                 },
-                pass (reason) {
+                pass(reason) {
                     t.pass(reason);
                 },
-                fail (reason) {
+                fail(reason) {
                     t.fail(reason);
                 },
-                plan (count) {
+                plan(count) {
                     didPlan = true;
                     t.plan(Number(count));
                 },
-                end () {
+                end() {
                     didEnd = true;
                     t.end();
-                }
+                },
             };
-            const reportVmResult = text => {
+            const reportVmResult = (text) => {
                 const command = text.split(/\s+/, 1)[0].toLowerCase();
                 if (reporters[command]) {
-                    return reporters[command](text.substring(command.length).trim());
+                    return reporters[command](
+                        text.substring(command.length).trim()
+                    );
                 }
 
                 // Default to a comment with the full text if we didn't match
@@ -117,13 +119,14 @@ fs.readdirSync(executeDir)
             });
 
             // Report the text of SAY events as testing instructions.
-            vm.runtime.on('SAY', (target, type, text) => reportVmResult(text));
+            vm.runtime.on("SAY", (target, type, text) => reportVmResult(text));
 
             const project = readFileToBuffer(path.resolve(executeDir, uri));
 
             // Load the project and once all threads are complete ensure that
             // the scratch project sent us a "end" message.
-            return vm.loadProject(project)
+            return vm
+                .loadProject(project)
                 .then(() => vm.greenFlag())
                 .then(() => whenThreadsComplete(t, vm))
                 .then(() => {
