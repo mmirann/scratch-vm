@@ -16,7 +16,7 @@ const blockIconURI =
  * A time interval to wait (in milliseconds) before reporting to the BLE socket
  * that data has stopped coming from the peripheral.
  */
-const BLETimeout = 4500;
+const BLETimeout = 2500;
 
 /**
  * A time interval to wait (in milliseconds) while a block that sends a BLE message is running.
@@ -47,12 +47,13 @@ d895ddee-902e-11eb-a8b3-0242ac130003
 d895dea2-902e-11eb-a8b3-0242ac130003
 */
 const BLEUUID = {
-    service: 0xc005,
+    set_service: 0xc005,
     set_neopixel: "d895d61e-902e-11eb-a8b3-0242ac130003",
+    get_service: 0xc006,
     get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
 
-class jikko {
+class Jikko {
     /**
      * Construct a MicroBit communication object.
      * @param {Runtime} runtime - the Scratch 3.0 runtime
@@ -103,6 +104,14 @@ class jikko {
         this._onMessage = this._onMessage.bind(this);
     }
 
+    get userButton() {
+        if (this._user_button == 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     //전부 다 키는 걸로
 
     setLEDLamp(value) {
@@ -137,7 +146,7 @@ class jikko {
         send_data.push(g);
         send_data.push(b);
 
-        return this.send(BLEUUID.service, BLEUUID.set_neopixel, send_data);
+        return this.send(BLEUUID.set_service, BLEUUID.set_neopixel, send_data);
     }
 
     send(service, characteristic, value) {
@@ -175,7 +184,7 @@ class jikko {
             {
                 filters: [
                     {
-                        services: [BLEUUID.service],
+                        services: [BLEUUID.get_service, BLEUUID.set_service],
                     },
                 ],
             },
@@ -220,7 +229,7 @@ class jikko {
      */
     _onConnect() {
         this._ble.read(
-            BLEUUID.service,
+            BLEUUID.get_service,
             BLEUUID.get_button,
             true,
             this._onMessage
@@ -252,12 +261,12 @@ class jikko {
 /**
  * Scratch 3.0 blocks to interact with a jikko peripheral.
  */
-class Scratch3jikkoBlocks {
+class Scratch3JikkoBlocks {
     /**
      * @return {string} - the name of this extension.
      */
     static get EXTENSION_NAME() {
-        return "jikko";
+        return "Jikko";
     }
 
     /**
@@ -268,7 +277,7 @@ class Scratch3jikkoBlocks {
     }
 
     /**
-     * Construct a set of EduBot blocks.
+     * Construct a set of jikko blocks.
      * @param {Runtime} runtime - the Scratch 3.0 runtime.
      */
     constructor(runtime) {
@@ -278,10 +287,10 @@ class Scratch3jikkoBlocks {
          */
         this.runtime = runtime;
 
-        // Create a new EduBot peripheral instance
-        this._peripheral = new jikko(
+        // Create a new jikko peripheral instance
+        this._peripheral = new Jikko(
             this.runtime,
-            Scratch3jikkoBlocks.EXTENSION_ID
+            Scratch3JikkoBlocks.EXTENSION_ID
         );
     }
 
@@ -290,8 +299,8 @@ class Scratch3jikkoBlocks {
      */
     getInfo() {
         return {
-            id: Scratch3jikkoBlocks.EXTENSION_ID,
-            name: Scratch3jikkoBlocks.EXTENSION_NAME,
+            id: Scratch3JikkoBlocks.EXTENSION_ID,
+            name: Scratch3JikkoBlocks.EXTENSION_NAME,
             blockIconURI: blockIconURI,
             showStatusButton: true,
             blocks: [
@@ -300,7 +309,7 @@ class Scratch3jikkoBlocks {
                     text: formatMessage({
                         id: "jikko.whenButtonPressed",
                         default: "when button pressed",
-                        description: "when the button on the edubot is pressed",
+                        description: "when the button on the jikko is pressed",
                     }),
                     blockType: BlockType.HAT,
                     arguments: {},
@@ -310,7 +319,7 @@ class Scratch3jikkoBlocks {
                     text: formatMessage({
                         id: "jikko.isButtonPressed",
                         default: "button pressed?",
-                        description: "is the button on the edubot pressed?",
+                        description: "is the button on the jikko pressed?",
                     }),
                     blockType: BlockType.BOOLEAN,
                     arguments: {},
@@ -321,7 +330,7 @@ class Scratch3jikkoBlocks {
                     text: formatMessage({
                         id: "jikko.setLEDLamp",
                         default: "set neopixel all [ALL_COLOR]",
-                        description: "set LED on the edubot display",
+                        description: "set LED on the jikko display",
                     }),
                     blockType: BlockType.COMMAND,
                     arguments: {
@@ -372,4 +381,4 @@ class Scratch3jikkoBlocks {
     }
 }
 
-module.exports = Scratch3jikkoBlocks;
+module.exports = Scratch3JikkoBlocks;
