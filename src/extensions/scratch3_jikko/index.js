@@ -38,7 +38,6 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
-d895d7cc-902e-11eb-a8b3-0242ac130003
 d895d88a-902e-11eb-a8b3-0242ac130003
 d895d952-902e-11eb-a8b3-0242ac130003
 d895dc2c-902e-11eb-a8b3-0242ac130003
@@ -48,6 +47,7 @@ d895dea2-902e-11eb-a8b3-0242ac130003
 */
 const BLEUUID = {
     set_service: 0xc005,
+    set_pin: "d895d7cc-902e-11eb-a8b3-0242ac130003",
     set_neopixel: "d895d61e-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
     get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
@@ -110,6 +110,18 @@ class Jikko {
         } else {
             return true;
         }
+    }
+
+    /*
+    0. digital: cmd, pin, value
+    1. pwm: cmd, pin, value
+    */
+    setPin(cmd, pin, value) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(pin);
+        send_data.push(value);
+        return this.send(BLEUUID.set_service, BLEUUID.set_pin, send_data);
     }
 
     /*
@@ -335,6 +347,95 @@ class Scratch3JikkoBlocks {
             showStatusButton: true,
             blocks: [
                 {
+                    opcode: "setDigitalPin",
+                    text: formatMessage({
+                        id: "jikko.setDigitalPin",
+                        default:
+                            "디지털 [DIGITAL_PIN] 핀 디지털 값 [DIGITAL_TOGGLE] 출력",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        DIGITAL_TOGGLE: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_TOGGLE",
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                {
+                    opcode: "setPWMPin",
+                    text: formatMessage({
+                        id: "jikko.setPWMPin",
+                        default:
+                            "PWM [DIGITAL_PIN] 핀 아날로그 값 [PWM_VALUE] 출력 (0~255)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        PWM_VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 255,
+                        },
+                    },
+                },
+
+                "---",
+                {
+                    opcode: "setLedDigitalPin",
+                    text: formatMessage({
+                        id: "jikko.setLedDigitalPin",
+                        default: "LED [DIGITAL_PIN] 핀 [LED_TOGGLE]",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        LED_TOGGLE: {
+                            type: ArgumentType.STRING,
+                            menu: "LED_TOGGLE",
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                {
+                    opcode: "setLEDPWMPin",
+                    text: formatMessage({
+                        id: "jikko.setLEDPWMPin",
+                        default:
+                            "LED (PWM [DIGITAL_PIN] 핀) 밝기 [PWM_VALUE] 출력 (0~255)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        PWM_VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 255,
+                        },
+                    },
+                },
+                "---",
+
+                {
                     opcode: "whenButtonPressed",
                     text: formatMessage({
                         id: "jikko.whenButtonPressed",
@@ -479,6 +580,14 @@ class Scratch3JikkoBlocks {
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
+                LED_TOGGLE: [
+                    { text: "켜기", value: 1 },
+                    { text: "끄기", value: 0 },
+                ],
+                DIGITAL_TOGGLE: [
+                    { text: "HIGH", value: 1 },
+                    { text: "LOW", value: 0 },
+                ],
             },
         };
     }
@@ -488,6 +597,46 @@ class Scratch3JikkoBlocks {
 
     isButtonPressed(args) {
         return this._peripheral.userButton;
+    }
+
+    setDigitalPin(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setPWMPin(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.PWM_VALUE);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setLedDigitalPin(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.LED_TOGGLE);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setLEDPWMPin(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.PWM_VALUE);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
     }
 
     setNEOInit(args) {
