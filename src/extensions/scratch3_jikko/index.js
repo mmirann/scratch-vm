@@ -112,19 +112,45 @@ class Jikko {
         }
     }
 
-    //전부 다 키는 걸로
-
-    setLEDLamp(value) {
+    /*
+    0. init: cmd, pin, led_num
+    1. brightness: cmd, pin, brightness
+    2. clear_all: cmd, pin, color
+    3. no_color: cmd, pin, color, num
+    4. all_color: cmd, pin, color
+    */
+    setLEDLamp(cmd, pin, value, num) {
         var send_data = [];
-        // const hexToRgb = (hex) =>
-        //     hex
-        //         .replace(
-        //             /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
-        //             (m, r, g, b) => "#" + r + r + g + g + b + b
-        //         )
-        //         .substring(1)
-        //         .match(/.{2}/g)
-        //         .map((x) => parseInt(x, 16));
+
+        send_data.push(cmd);
+        send_data.push(pin);
+
+        if (cmd == 0) {
+            // init, value=led number
+            send_data.push(value);
+            return this.send(
+                BLEUUID.set_service,
+                BLEUUID.set_neopixel,
+                send_data
+            );
+        } else if (cmd == 1) {
+            //set_brightness, value=brightness
+            send_data.push(value);
+            return this.send(
+                BLEUUID.set_service,
+                BLEUUID.set_neopixel,
+                send_data
+            );
+        } else if (cmd == 2) {
+            //clear_all
+            return this.send(
+                BLEUUID.set_service,
+                BLEUUID.set_neopixel,
+                send_data
+            );
+        }
+        // cmd 3,4 => set_color
+        // parsing first
 
         let r = parseInt(value.substr(1, 2), 16);
         let g = parseInt(value.substr(3, 2), 16);
@@ -145,6 +171,10 @@ class Jikko {
         send_data.push(r);
         send_data.push(g);
         send_data.push(b);
+
+        if (cmd == 3) {
+            send_data.push(num);
+        }
 
         return this.send(BLEUUID.set_service, BLEUUID.set_neopixel, send_data);
     }
@@ -326,30 +356,130 @@ class Scratch3JikkoBlocks {
                 },
                 "---",
                 {
-                    opcode: "setLEDLamp",
+                    opcode: "setNEOInit",
                     text: formatMessage({
-                        id: "jikko.setLEDLamp",
-                        default: "set neopixel all [ALL_COLOR]",
-                        description: "set LED on the jikko display",
+                        id: "jikko.setNEOInit",
+                        default:
+                            "네오픽셀 LED 시작하기 설정 ([DIGITAL_PIN] 핀에 [NUM]개의 LED 연결)",
+                        description: "",
                     }),
                     blockType: BlockType.COMMAND,
                     arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 2,
+                        },
+                        NUM: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 4,
+                        },
+                    },
+                },
+                {
+                    opcode: "setNEOBright",
+                    text: formatMessage({
+                        id: "jikko.setNEOBright",
+                        default:
+                            "네오픽셀 LED([DIGITAL_PIN] 핀) 밝기 [BRIGHTNESS] 으로 설정 (0~255)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 2,
+                        },
+                        BRIGHTNESS: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 255,
+                        },
+                    },
+                },
+                {
+                    opcode: "setNumNeo",
+                    text: formatMessage({
+                        id: "jikko.setNumNeo",
+                        default:
+                            "네오픽셀 LED ( [DIGITAL_PIN] 핀) [NUM] 번째 LED 색 [ALL_COLOR] 출력",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 2,
+                        },
+                        NUM: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 1,
+                        },
                         ALL_COLOR: {
                             type: ArgumentType.COLOR,
                         },
                     },
                 },
                 {
-                    opcode: "turnOffLEDLamp",
+                    opcode: "setAllNeo",
                     text: formatMessage({
-                        id: "jikko.turnOffLEDLamp",
-                        default: "turn off LEDs",
-                        description: "turn off LEDs",
+                        id: "jikko.setAllNeo",
+                        default:
+                            "네오픽셀 LED ( [DIGITAL_PIN] 핀) 모든 LED 색 [ALL_COLOR] 출력",
+                        description: "",
                     }),
                     blockType: BlockType.COMMAND,
-                    arguments: {},
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 2,
+                        },
+                        ALL_COLOR: {
+                            type: ArgumentType.COLOR,
+                        },
+                    },
+                },
+                {
+                    opcode: "setNEOClear",
+                    text: formatMessage({
+                        id: "jikko.setNEOClear",
+                        default:
+                            "네오픽셀 LED ( [DIGITAL_PIN] 핀) 모든 LED 끄기",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 2,
+                        },
+                    },
                 },
             ],
+            menus: {
+                DIGITAL_PIN: [
+                    { text: "2", value: 2 },
+                    { text: "4", value: 4 },
+                    { text: "5", value: 5 },
+                    { text: "12", value: 12 },
+                    { text: "13", value: 13 },
+                    { text: "14", value: 14 },
+                    { text: "15", value: 15 },
+                    { text: "16", value: 16 },
+                    { text: "17", value: 17 },
+                    { text: "18", value: 18 },
+                    { text: "19", value: 19 },
+                    { text: "23", value: 23 },
+                    { text: "25", value: 25 },
+                    { text: "26", value: 26 },
+                    { text: "27", value: 27 },
+                    { text: "32", value: 32 },
+                    { text: "33", value: 33 },
+                ],
+            },
         };
     }
     whenButtonPressed(args) {
@@ -360,8 +490,8 @@ class Scratch3JikkoBlocks {
         return this._peripheral.userButton;
     }
 
-    setLEDLamp(args) {
-        this._peripheral.setLEDLamp(args.ALL_COLOR);
+    setNEOInit(args) {
+        this._peripheral.setLEDLamp(0, args.DIGITAL_PIN, args.NUM, 0);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -370,8 +500,41 @@ class Scratch3JikkoBlocks {
         });
     }
 
-    turnOffLEDLamp(args) {
-        this._peripheral.setLEDLamp("#000000");
+    setNEOBright(args) {
+        this._peripheral.setLEDLamp(1, args.DIGITAL_PIN, args.BRIGHTNESS, 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setNumNeo(args) {
+        this._peripheral.setLEDLamp(
+            3,
+            args.DIGITAL_PIN,
+            args.ALL_COLOR,
+            args.NUM
+        );
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setAllNeo(args) {
+        this._peripheral.setLEDLamp(4, args.DIGITAL_PIN, args.ALL_COLOR, 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setNEOClear(args) {
+        this._peripheral.setLEDLamp(2, args.DIGITAL_PIN, "#000000", 0);
 
         return new Promise((resolve) => {
             setTimeout(() => {
