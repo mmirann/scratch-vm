@@ -395,7 +395,7 @@ class Scratch3JikkoBlocks {
                     opcode: "setLedDigitalPin",
                     text: formatMessage({
                         id: "jikko.setLedDigitalPin",
-                        default: "LED [DIGITAL_PIN] 핀 [LED_TOGGLE]",
+                        default: "LED [DIGITAL_PIN] 핀 [DIGITAL_TOGGLE_KO]",
                         description: "",
                     }),
                     blockType: BlockType.COMMAND,
@@ -405,9 +405,9 @@ class Scratch3JikkoBlocks {
                             menu: "DIGITAL_PIN",
                             defaultValue: 4,
                         },
-                        LED_TOGGLE: {
+                        DIGITAL_TOGGLE_KO: {
                             type: ArgumentType.STRING,
-                            menu: "LED_TOGGLE",
+                            menu: "DIGITAL_TOGGLE_KO",
                             defaultValue: 1,
                         },
                     },
@@ -418,6 +418,70 @@ class Scratch3JikkoBlocks {
                         id: "jikko.setLEDPWMPin",
                         default:
                             "LED (PWM [DIGITAL_PIN] 핀) 밝기 [PWM_VALUE] 출력 (0~255)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        PWM_VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 255,
+                        },
+                    },
+                },
+                "---",
+                {
+                    opcode: "setServo",
+                    text: formatMessage({
+                        id: "jikko.setServo",
+                        default:
+                            "서보모터 [DIGITAL_PIN] 핀 [DEGREE] 각도로 회전",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        DEGREE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 180,
+                        },
+                    },
+                },
+                {
+                    opcode: "setDigitalDCMotor",
+                    text: formatMessage({
+                        id: "jikko.setDigitalDCMotor",
+                        default: "DC모터 [DIGITAL_PIN] 핀 [DIGITAL_TOGGLE_KO]",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        DIGITAL_TOGGLE_KO: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_TOGGLE_KO",
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                {
+                    opcode: "setPWMDCMotor",
+                    text: formatMessage({
+                        id: "jikko.setPWMDCMotor",
+                        default:
+                            "DC모터 [DIGITAL_PIN] 핀 세기 [PWM_VALUE] 출력 (0~255)",
                         description: "",
                     }),
                     blockType: BlockType.COMMAND,
@@ -569,8 +633,6 @@ class Scratch3JikkoBlocks {
                     { text: "13", value: 13 },
                     { text: "14", value: 14 },
                     { text: "15", value: 15 },
-                    { text: "16", value: 16 },
-                    { text: "17", value: 17 },
                     { text: "18", value: 18 },
                     { text: "19", value: 19 },
                     { text: "23", value: 23 },
@@ -580,7 +642,7 @@ class Scratch3JikkoBlocks {
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
-                LED_TOGGLE: [
+                DIGITAL_TOGGLE_KO: [
                     { text: "켜기", value: 1 },
                     { text: "끄기", value: 0 },
                 ],
@@ -610,7 +672,10 @@ class Scratch3JikkoBlocks {
     }
 
     setPWMPin(args) {
-        this._peripheral.setPin(0, args.DIGITAL_PIN, args.PWM_VALUE);
+        var value = args.PWM_VALUE;
+        value = Math.min(value, 180);
+        value = Math.max(value, 0);
+        this._peripheral.setPin(1, args.DIGITAL_PIN, value);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -620,7 +685,7 @@ class Scratch3JikkoBlocks {
     }
 
     setLedDigitalPin(args) {
-        this._peripheral.setPin(0, args.DIGITAL_PIN, args.LED_TOGGLE);
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE_KO);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -630,7 +695,45 @@ class Scratch3JikkoBlocks {
     }
 
     setLEDPWMPin(args) {
-        this._peripheral.setPin(0, args.DIGITAL_PIN, args.PWM_VALUE);
+        var value = args.PWM_VALUE;
+        value = Math.min(value, 180);
+        value = Math.max(value, 0);
+        this._peripheral.setPin(1, args.DIGITAL_PIN, value);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setServo(args) {
+        var duty = args.DEGREE * 18.2 + 3277;
+        duty = Math.min(duty, 180);
+        duty = Math.max(duty, 0);
+
+        this._peripheral.setPin(1, args.DIGITAL_PIN, duty);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setDigitalDCMotor(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE_KO);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setPWMDCMotor(args) {
+        var value = args.PWM_VALUE;
+        value = Math.min(value, 180);
+        value = Math.max(value, 0);
+        this._peripheral.setPin(1, args.DIGITAL_PIN, value);
 
         return new Promise((resolve) => {
             setTimeout(() => {
