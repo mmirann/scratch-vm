@@ -115,6 +115,7 @@ class Jikko {
     /*
     0. digital: cmd, pin, value
     1. pwm: cmd, pin, value
+    2. servo pwm
     */
     setPin(cmd, pin, value) {
         var send_data = [];
@@ -695,8 +696,8 @@ class Scratch3JikkoBlocks {
     }
 
     setLEDPWMPin(args) {
-        var value = args.PWM_VALUE;
-        value = Math.min(value, 180);
+        var value = parseInt(args.PWM_VALUE);
+        value = Math.min(value, 255);
         value = Math.max(value, 0);
         this._peripheral.setPin(1, args.DIGITAL_PIN, value);
 
@@ -708,11 +709,8 @@ class Scratch3JikkoBlocks {
     }
 
     setServo(args) {
-        var duty = args.DEGREE * 18.2 + 3277;
-        duty = Math.min(duty, 180);
-        duty = Math.max(duty, 0);
-
-        this._peripheral.setPin(1, args.DIGITAL_PIN, duty);
+        var value = parseInt(args.DEGREE);
+        this._peripheral.setPin(2, args.DIGITAL_PIN, value);
 
         return new Promise((resolve) => {
             setTimeout(() => {
