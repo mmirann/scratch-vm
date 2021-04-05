@@ -38,8 +38,6 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
-d895d88a-902e-11eb-a8b3-0242ac130003
-d895d952-902e-11eb-a8b3-0242ac130003
 d895dc2c-902e-11eb-a8b3-0242ac130003
 d895dd30-902e-11eb-a8b3-0242ac130003
 d895ddee-902e-11eb-a8b3-0242ac130003
@@ -49,6 +47,7 @@ const BLEUUID = {
     set_service: 0xc005,
     set_pin: "d895d7cc-902e-11eb-a8b3-0242ac130003",
     set_neopixel: "d895d61e-902e-11eb-a8b3-0242ac130003",
+    set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
     get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
@@ -123,6 +122,14 @@ class Jikko {
         send_data.push(pin);
         send_data.push(value);
         return this.send(BLEUUID.set_service, BLEUUID.set_pin, send_data);
+    }
+
+    setBuzzerPlay(pin, note, beats) {
+        var send_data = [];
+        send_data.push(pin);
+        send_data.push(note);
+        send_data.push(beats);
+        return this.send(BLEUUID.set_service, BLEUUID.set_buzzer, send_data);
     }
 
     /*
@@ -436,6 +443,76 @@ class Scratch3JikkoBlocks {
                 },
                 "---",
                 {
+                    opcode: "setBuzzerToggle",
+                    text: formatMessage({
+                        id: "jikko.setBuzzerToggle",
+                        default:
+                            "피에조부저 [DIGITAL_PIN] 핀 [DIGITAL_TOGGLE_KO]",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        DIGITAL_TOGGLE_KO: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_TOGGLE_KO",
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                {
+                    opcode: "setBuzzerPWM",
+                    text: formatMessage({
+                        id: "jikko.setBuzzerPWM",
+                        default:
+                            "피에조부저 [DIGITAL_PIN] 핀 음량 [VOLUME] 출력 (0~255)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        VOLUME: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 255,
+                        },
+                    },
+                },
+                {
+                    opcode: "setBuzzerPlay",
+                    text: formatMessage({
+                        id: "jikko.setBuzzerPlay",
+                        default:
+                            "피에조부저 [DIGITAL_PIN] 핀 [NOTE]음(hz) [BUZZER_BEATS] 박자 연주",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.NUMBER,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 4,
+                        },
+                        NOTE: {
+                            type: ArgumentType.NOTE,
+                            defaultValue: 60,
+                        },
+                        BUZZER_BEATS: {
+                            type: ArgumentType.NUMBER,
+                            menu: "BUZZER_BEATS",
+                            defaultValue: 4,
+                        },
+                    },
+                },
+                "---",
+                {
                     opcode: "setServo",
                     text: formatMessage({
                         id: "jikko.setServo",
@@ -643,6 +720,13 @@ class Scratch3JikkoBlocks {
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
+                BUZZER_BEATS: [
+                    { text: "4", value: 1 },
+                    { text: "2", value: 2 },
+                    { text: "1", value: 4 },
+                    { text: "0.5", value: 8 },
+                    { text: "0.25", value: 12 },
+                ],
                 DIGITAL_TOGGLE_KO: [
                     { text: "켜기", value: 1 },
                     { text: "끄기", value: 0 },
@@ -687,7 +771,6 @@ class Scratch3JikkoBlocks {
 
     setLedDigitalPin(args) {
         this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE_KO);
-
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
@@ -708,8 +791,47 @@ class Scratch3JikkoBlocks {
         });
     }
 
+    setBuzzerToggle(args) {
+        this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE_KO);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setBuzzerPWM(args) {
+        var value = parseInt(args.VOLUME);
+        value = Math.min(value, 255);
+        value = Math.max(value, 0);
+        this._peripheral.setPin(1, args.DIGITAL_PIN, value);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setBuzzerPlay(args) {
+        let note = parseInt(args.NOTE);
+        let beats = parseInt(args.BUZZER_BEATS); //value
+        var beats_delay = parseInt(args.BUZZER_BEATS.text); //text
+        beats_delay *= 1000;
+        this._peripheral.setBuzzerPlay(args.DIGITAL_PIN, note, beats);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, beats_delay * 50); //beats 초동안 재생
+        });
+    }
+
     setServo(args) {
         var value = parseInt(args.DEGREE);
+        value = Math.min(value, 180);
+        value = Math.max(value, 0);
         this._peripheral.setPin(2, args.DIGITAL_PIN, value);
 
         return new Promise((resolve) => {
