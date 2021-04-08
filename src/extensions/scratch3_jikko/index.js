@@ -507,7 +507,7 @@ class Scratch3JikkoBlocks {
                         BUZZER_BEATS: {
                             type: ArgumentType.NUMBER,
                             menu: "BUZZER_BEATS",
-                            defaultValue: 4,
+                            defaultValue: 1,
                         },
                     },
                 },
@@ -721,11 +721,11 @@ class Scratch3JikkoBlocks {
                     { text: "33", value: 33 },
                 ],
                 BUZZER_BEATS: [
-                    { text: "4", value: 1 },
+                    { text: "4", value: 4 },
                     { text: "2", value: 2 },
-                    { text: "1", value: 4 },
-                    { text: "0.5", value: 8 },
-                    { text: "0.25", value: 12 },
+                    { text: "1", value: 1 },
+                    { text: "0.5", value: 0.5 },
+                    { text: "0.25", value: 0.25 },
                 ],
                 DIGITAL_TOGGLE_KO: [
                     { text: "켜기", value: 1 },
@@ -817,14 +817,14 @@ class Scratch3JikkoBlocks {
     setBuzzerPlay(args) {
         let note = parseInt(args.NOTE);
         let beats = parseInt(args.BUZZER_BEATS); //value
-        var beats_delay = parseInt(args.BUZZER_BEATS.text); //text
-        beats_delay *= 1000;
+        var beats_delay = beats * 1000;
+
         this._peripheral.setBuzzerPlay(args.DIGITAL_PIN, note, beats);
 
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
-            }, beats_delay * 50); //beats 초동안 재생
+            }, beats_delay + 50); //beats 초동안 재생
         });
     }
 
