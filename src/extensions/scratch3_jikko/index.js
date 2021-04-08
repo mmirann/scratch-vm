@@ -38,7 +38,6 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
-d895dc2c-902e-11eb-a8b3-0242ac130003
 d895dd30-902e-11eb-a8b3-0242ac130003
 d895ddee-902e-11eb-a8b3-0242ac130003
 d895dea2-902e-11eb-a8b3-0242ac130003
@@ -48,6 +47,7 @@ const BLEUUID = {
     set_pin: "d895d7cc-902e-11eb-a8b3-0242ac130003",
     set_neopixel: "d895d61e-902e-11eb-a8b3-0242ac130003",
     set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
+    set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
     get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
@@ -145,16 +145,9 @@ class Jikko {
         send_data.push(cmd);
         send_data.push(pin);
 
-        if (cmd == 0) {
-            // init, value=led number
-            send_data.push(value);
-            return this.send(
-                BLEUUID.set_service,
-                BLEUUID.set_neopixel,
-                send_data
-            );
-        } else if (cmd == 1) {
-            //set_brightness, value=brightness
+        // 0.init: value=led number
+        // 1.set_brightness: value=brightness
+        if (cmd == 0 || cmd == 1) {
             send_data.push(value);
             return this.send(
                 BLEUUID.set_service,
@@ -197,6 +190,30 @@ class Jikko {
         }
 
         return this.send(BLEUUID.set_service, BLEUUID.set_neopixel, send_data);
+    }
+
+    // 0: init, 1: clear, 2: text
+    setLCDText(cmd, column, row, textLen, str) {
+        var send_data = [];
+        send_data.push(cmd);
+
+        if (cmd == 0) {
+            send_data.push(column);
+            send_data.push(row);
+            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+        } else if (cmd == 1) {
+            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+        }
+        send_data.push(column);
+        send_data.push(row);
+        send_data.push(textLen);
+        for (var i = 0; i < textLen; i++) {
+            var charcode = str.charCodeAt(i);
+            if (charcode < 0x80)
+                //ASCII 코드라면
+                send_data.push(charcode);
+        }
+        return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
     }
 
     send(service, characteristic, value) {
@@ -701,6 +718,60 @@ class Scratch3JikkoBlocks {
                         },
                     },
                 },
+                "---",
+                {
+                    opcode: "setLCDInit",
+                    text: formatMessage({
+                        id: "jikko.setLCDInit",
+                        default: "I2C LCD 시작하기 설정 ([COLUMN] 열 [ROW] 행)",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        COLUMN: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 16,
+                        },
+                        ROW: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 2,
+                        },
+                    },
+                },
+                {
+                    opcode: "setLCDText",
+                    text: formatMessage({
+                        id: "jikko.setLCDText",
+                        default: "LCD [COLUMN] 열 [ROW] 행 부터 [TEXT] 출력",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        COLUMN: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        ROW: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        TEXT: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "HELLO, JIKKO!",
+                        },
+                    },
+                },
+                {
+                    opcode: "setLCDClear",
+                    text: formatMessage({
+                        id: "jikko.setLCDClear",
+                        default: "LCD 화면 지우기",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {},
+                },
+                "---",
             ],
             menus: {
                 DIGITAL_PIN: [
@@ -840,6 +911,7 @@ class Scratch3JikkoBlocks {
             }, 50);
         });
     }
+
     setDigitalDCMotor(args) {
         this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE_KO);
 
@@ -849,6 +921,7 @@ class Scratch3JikkoBlocks {
             }, 50);
         });
     }
+
     setPWMDCMotor(args) {
         var value = args.PWM_VALUE;
         value = Math.min(value, 180);
@@ -907,6 +980,45 @@ class Scratch3JikkoBlocks {
 
     setNEOClear(args) {
         this._peripheral.setLEDLamp(2, args.DIGITAL_PIN, "#000000", 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setLCDInit(args) {
+        this._peripheral.setLCDText(0, args.COLUMN, args.ROW, 0, 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setLCDClear(args) {
+        this._peripheral.setLCDText(1, 0, 0, 0, 0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+    setLCDText(args) {
+        var textLen = ("" + args.TEXT).length;
+        //const text = String(args.TEXT).substring(0, 19);
+
+        if (textLen > 0) {
+            this._peripheral.setLCDText(
+                2,
+                args.COLUMN,
+                args.ROW,
+                textLen,
+                args.TEXT
+            );
+        }
 
         return new Promise((resolve) => {
             setTimeout(() => {
