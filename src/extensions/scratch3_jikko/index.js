@@ -48,6 +48,7 @@ const BLEUUID = {
     set_neopixel: "d895d61e-902e-11eb-a8b3-0242ac130003",
     set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
     set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
+    set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
     get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
@@ -135,9 +136,9 @@ class Jikko {
     /*
     0. init: cmd, pin, led_num
     1. brightness: cmd, pin, brightness
-    2. clear_all: cmd, pin, color
-    3. no_color: cmd, pin, color, num
-    4. all_color: cmd, pin, color
+  
+    2. no_color: cmd, pin, color, num
+    3. all_color: cmd, pin, color
     */
     setLEDLamp(cmd, pin, value, num) {
         var send_data = [];
@@ -149,20 +150,14 @@ class Jikko {
         // 1.set_brightness: value=brightness
         if (cmd == 0 || cmd == 1) {
             send_data.push(value);
-            return this.send(
-                BLEUUID.set_service,
-                BLEUUID.set_neopixel,
-                send_data
-            );
-        } else if (cmd == 2) {
-            //clear_all
+            console.log(send_data);
             return this.send(
                 BLEUUID.set_service,
                 BLEUUID.set_neopixel,
                 send_data
             );
         }
-        // cmd 3,4 => set_color
+        // cmd 2,3 => set_color
         // parsing first
 
         let r = parseInt(value.substr(1, 2), 16);
@@ -185,10 +180,11 @@ class Jikko {
         send_data.push(g);
         send_data.push(b);
 
-        if (cmd == 3) {
+        if (cmd == 2) {
             send_data.push(num);
         }
 
+        console.log(send_data);
         return this.send(BLEUUID.set_service, BLEUUID.set_neopixel, send_data);
     }
 
@@ -216,6 +212,25 @@ class Jikko {
         return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
     }
 
+    // 0: print, 1: clear
+    // 2: text theme(size, color)
+    // 3: text (column, row, textLen, str)
+    setOLEDText(cmd, value1, value2, textLen, str) {
+        var send_data = [];
+        send_data.push(cmd);
+        if (cmd == 0 || cmd == 1) {
+            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+        }
+        send_data.push(value1);
+        send_data.push(value2);
+        if (cmd == 2) {
+            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+        } else if (cmd == 3) {
+            send_data.push(textLen);
+            send_data.push(str);
+        }
+        return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+    }
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
         if (this._busy) return;
@@ -593,6 +608,24 @@ class Scratch3JikkoBlocks {
                     },
                 },
                 "---",
+                {
+                    opcode: "getDHTvalue",
+                    text: formatMessage({
+                        id: "jikko.getDHTvalue",
+                        default: "DHT11 온습도센서 [DHT_SELECT] 의 값",
+                        description: "",
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        DHT_SELECT: {
+                            type: ArgumentType.STRING,
+                            menu: "DHT_SELECT",
+                            defaultValue: 0,
+                        },
+                    },
+                },
+
+                "---",
 
                 {
                     opcode: "whenButtonPressed",
@@ -772,6 +805,71 @@ class Scratch3JikkoBlocks {
                     arguments: {},
                 },
                 "---",
+                {
+                    opcode: "setOLEDInput",
+                    text: formatMessage({
+                        id: "jikko.setOLEDInput",
+                        default:
+                            "OLED 화면 [COLUMN] 열 [ROW] 행부터 [TEXT] 입력",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        COLUMN: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        ROW: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        TEXT: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "HELLO, JIKKO!",
+                        },
+                    },
+                },
+                {
+                    opcode: "setOLEDPrint",
+                    text: formatMessage({
+                        id: "jikko.setOLEDPrint",
+                        default: "OLED 문자열 출력하기",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {},
+                },
+                {
+                    opcode: "setOLEDClear",
+                    text: formatMessage({
+                        id: "jikko.setOLEDClear",
+                        default: "OLED 문자열 지우기",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {},
+                },
+                {
+                    opcode: "setOLEDtext",
+                    text: formatMessage({
+                        id: "jikko.setOLEDtext",
+                        default:
+                            "OLED 글씨 크기(1~21) [SIZE] 색상 [COLOR]로 설정",
+                        description: "",
+                    }),
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        SIZE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 0,
+                        },
+                        COLOR: {
+                            type: ArgumentType.NUMBER,
+                            menu: "OLED_COLOR",
+                            defaultValue: 0,
+                        },
+                    },
+                },
             ],
             menus: {
                 DIGITAL_PIN: [
@@ -805,6 +903,10 @@ class Scratch3JikkoBlocks {
                 DIGITAL_TOGGLE: [
                     { text: "HIGH", value: 1 },
                     { text: "LOW", value: 0 },
+                ],
+                OLED_COLOR: [
+                    { text: "흰색", value: "0" },
+                    { text: "검정색", value: "1" },
                 ],
             },
         };
@@ -936,7 +1038,7 @@ class Scratch3JikkoBlocks {
     }
 
     setNEOInit(args) {
-        this._peripheral.setLEDLamp(0, args.DIGITAL_PIN, args.NUM, 0);
+        this._peripheral.setLEDLamp(0, args.DIGITAL_PIN, args.NUM);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -946,7 +1048,7 @@ class Scratch3JikkoBlocks {
     }
 
     setNEOBright(args) {
-        this._peripheral.setLEDLamp(1, args.DIGITAL_PIN, args.BRIGHTNESS, 0);
+        this._peripheral.setLEDLamp(1, args.DIGITAL_PIN, args.BRIGHTNESS);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -956,7 +1058,7 @@ class Scratch3JikkoBlocks {
     }
     setNumNeo(args) {
         this._peripheral.setLEDLamp(
-            3,
+            2,
             args.DIGITAL_PIN,
             args.ALL_COLOR,
             args.NUM
@@ -969,7 +1071,7 @@ class Scratch3JikkoBlocks {
         });
     }
     setAllNeo(args) {
-        this._peripheral.setLEDLamp(4, args.DIGITAL_PIN, args.ALL_COLOR, 0);
+        this._peripheral.setLEDLamp(3, args.DIGITAL_PIN, args.ALL_COLOR);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -979,7 +1081,7 @@ class Scratch3JikkoBlocks {
     }
 
     setNEOClear(args) {
-        this._peripheral.setLEDLamp(2, args.DIGITAL_PIN, "#000000", 0);
+        this._peripheral.setLEDLamp(3, args.DIGITAL_PIN, "#000000");
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -998,7 +1100,7 @@ class Scratch3JikkoBlocks {
         });
     }
     setLCDClear(args) {
-        this._peripheral.setLCDText(1, 0, 0, 0, 0);
+        this._peripheral.setLCDText(1);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -1013,6 +1115,57 @@ class Scratch3JikkoBlocks {
         if (textLen > 0) {
             this._peripheral.setLCDText(
                 2,
+                args.COLUMN,
+                args.ROW,
+                textLen,
+                args.TEXT
+            );
+        }
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setOLEDPrint(args) {
+        this._peripheral.setOLEDText(0);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setOLEDClear(args) {
+        this._peripheral.setOLEDText(1);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setOLEDText(args) {
+        this._peripheral.setOLEDText(2, value1, value2);
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve();
+            }, 50);
+        });
+    }
+
+    setOLEDInput(args) {
+        var textLen = ("" + args.TEXT).length;
+        //const text = String(args.TEXT).substring(0, 19);
+
+        if (textLen > 0) {
+            this._peripheral.setOLEDText(
+                3,
                 args.COLUMN,
                 args.ROW,
                 textLen,
