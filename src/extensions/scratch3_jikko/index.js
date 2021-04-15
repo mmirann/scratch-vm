@@ -38,8 +38,6 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
-d895dd30-902e-11eb-a8b3-0242ac130003
-d895ddee-902e-11eb-a8b3-0242ac130003
 d895dea2-902e-11eb-a8b3-0242ac130003
 */
 const BLEUUID = {
@@ -49,6 +47,7 @@ const BLEUUID = {
     set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
     set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
     set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
+    set_port: "d895ddee-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
     get_value: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
@@ -66,7 +65,15 @@ class Jikko {
          * @private
          */
         this._runtime = runtime;
-        this._user_button = 1;
+
+        this._digital = 1;
+        this._analog = 1;
+        this._dht = [0, 0];
+        this._gyro = [0, 0, 0];
+        this._ultrasonic = 1;
+        this._touch = 1;
+        this._button = 1;
+        this._buttnpu = 1;
 
         /**
          * The BluetoothLowEnergy connection socket for reading/writing peripheral data.
@@ -104,13 +111,13 @@ class Jikko {
         this._onMessage = this._onMessage.bind(this);
     }
 
-    get userButton() {
-        if (this._user_button == 0) {
-            return false;
-        } else {
-            return true;
-        }
-    }
+    // get userButton() {
+    //     if (this._user_button == 0) {
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // }
 
     /*
     0. digital: cmd, pin, value
@@ -236,6 +243,24 @@ class Jikko {
         }
         return this.send(BLEUUID.set_service, BLEUUID.set_oled, send_data);
     }
+
+    //0: digital 1: analog 2:dht 3:ultrasonic 4:gyro
+    //  5:touch 6:button 7:button-pu
+    setPort(cmd, port1, port2) {
+        var send_data = [];
+        send_data.push(cmd);
+        if (cmd == 4)
+            return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+
+        send_data.push(port1);
+        if (cmd == 3) {
+            send_data.push(port2);
+            return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        }
+
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
         if (this._busy) return;
@@ -309,7 +334,6 @@ class Jikko {
         return connected;
     }
 
-    //Get 해오는 건 우선 보류
     /**
      * Starts reading data from peripheral after BLE has connected to it.
      * @private
@@ -334,28 +358,18 @@ class Jikko {
         this._battery.low_warning = data[2];
         this._user_button = data[3];
         */
-        var dataCnt = 0;
-
-        for (var i = 0; i < this._sensors.digitals.length(); i++) {
-            this._sensors.digitals[i] = data[dataCnt++];
-        }
-        for (var i = 0; i < this._sensors.analogs.length(); i++) {
-            this._sensors.analogs[i] = data[dataCnt++];
-        }
-        for (var i = 0; i < this._sensors.dht.length(); i++) {
-            this._sensors.dht[i] = data[dataCnt++];
-        }
-        for (var i = 0; i < this._sensors.ultrasonic.length(); i++) {
-            this._sensors.ultrasonic[i] = data[dataCnt++];
-        }
-        for (var i = 0; i < this._sensors.gyro.length(); i++) {
-            this._sensors.gyro[i] = data[dataCnt++];
-        }
-        for (var i = 0; i < this._sensors.touch.length(); i++) {
-            this._sensors.touch[i] = data[dataCnt++];
-        }
-
-        //        this._user_button = data[0];
+        console.log(data);
+        this._digital = data[0];
+        this._analog = data[1];
+        this._dht[0] = data[2];
+        this._dht[1] = data[3];
+        this._gyro[0] = data[4];
+        this._gyro[1] = data[5];
+        this._gyro[2] = data[6];
+        this._ultrasonic = data[7];
+        this._touch = data[8];
+        this.__button = data[9];
+        this.__buttonpu = data[10];
 
         // cancel disconnect timeout and start a new one
         window.clearInterval(this._timeoutID);
@@ -662,7 +676,7 @@ class Scratch3JikkoBlocks {
                         ANALOG_SELECT: {
                             type: ArgumentType.STRING,
                             menu: "ANALOG_SELECT",
-                            defaultValue: 0,
+                            defaultValue: 4,
                         },
                     },
                 },
@@ -679,12 +693,12 @@ class Scratch3JikkoBlocks {
                         TRIG: {
                             type: ArgumentType.STRING,
                             menu: "DIGITAL_PIN",
-                            defaultValue: 0,
+                            defaultValue: 13,
                         },
                         ECHO: {
                             type: ArgumentType.STRING,
                             menu: "DIGITAL_PIN",
-                            defaultValue: 1,
+                            defaultValue: 12,
                         },
                     },
                 },
@@ -701,7 +715,7 @@ class Scratch3JikkoBlocks {
                         DIGITAL_PIN: {
                             type: ArgumentType.STRING,
                             menu: "DIGITAL_PIN",
-                            defaultValue: 0,
+                            defaultValue: 14,
                         },
                         DHT_SELECT: {
                             type: ArgumentType.STRING,
@@ -738,32 +752,43 @@ class Scratch3JikkoBlocks {
                         TOUCH_SELECH: {
                             type: ArgumentType.STRING,
                             menu: "TOUCH_SELECH",
-                            defaultValue: 0,
+                            defaultValue: 33,
                         },
                     },
                 },
 
                 "---",
-
-                {
-                    opcode: "whenButtonPressed",
-                    text: formatMessage({
-                        id: "jikko.whenButtonPressed",
-                        default: "when button pressed",
-                        description: "when the button on the jikko is pressed",
-                    }),
-                    blockType: BlockType.HAT,
-                    arguments: {},
-                },
                 {
                     opcode: "isButtonPressed",
                     text: formatMessage({
                         id: "jikko.isButtonPressed",
-                        default: "button pressed?",
-                        description: "is the button on the jikko pressed?",
+                        default: "버튼 [DIGITAL_PIN] 눌림 상태",
+                        description: "",
                     }),
                     blockType: BlockType.BOOLEAN,
-                    arguments: {},
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 14,
+                        },
+                    },
+                },
+                {
+                    opcode: "isPUButtonPressed",
+                    text: formatMessage({
+                        id: "jikko.isPUButtonPressed",
+                        default: "풀업 저항 버튼 [DIGITAL_PIN] 눌림 상태",
+                        description: "",
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 14,
+                        },
+                    },
                 },
                 "---",
                 {
@@ -1057,12 +1082,55 @@ class Scratch3JikkoBlocks {
             },
         };
     }
-    whenButtonPressed(args) {
-        return this._peripheral.userButton;
+
+    getDigitalValue(args) {
+        this._peripheral.setPort(0, args.DIGITAL_PIN);
+        return this._peripheral._digital;
+    }
+
+    getAnalogValue(args) {
+        this._peripheral.setPort(1, args.ANALOG_SELECT);
+        return this._peripheral._analog;
+    }
+
+    getDHTvalue(args) {
+        this._peripheral.setPort(2, args.DIGITAL_PIN);
+
+        if (args.DHT_SELECT == 0) {
+            return this._peripheral._dht[0];
+        } else if (args.DHT_SELECT == 1) {
+            return this._peripheral._dht[1];
+        }
+    }
+    getUltrasonicValue(args) {
+        this._peripheral.setPort(3, args.TRIG, args.ECHO);
+        return this._peripheral._ultrasonic;
+    }
+    getGyroValue(args) {
+        this._peripheral.setPort(4);
+        if (args.GYRO_SELECT == 0) {
+            return this._peripheral._gyro[0];
+        } else if (args.GYRO_SELECT == 1) {
+            return this._peripheral._gyro[1];
+        } else if (args.GYRO_SELECT == 2) {
+            return this._peripheral._gyro[2];
+        }
+    }
+
+    getTouchValue(args) {
+        this._peripheral.setPort(5, args.DIGITAL_PIN);
+        return this._peripheral._touch;
     }
 
     isButtonPressed(args) {
-        return this._peripheral.userButton;
+        this._peripheral.setPort(6, args.DIGITAL_PIN);
+
+        return this._peripheral._button;
+    }
+
+    isButtonPressedpm(args) {
+        this._peripheral.setPort(7, args.DIGITAL_PIN);
+        return this._peripheral._buttnpu;
     }
 
     setDigitalPin(args) {
@@ -1074,7 +1142,6 @@ class Scratch3JikkoBlocks {
             }, 50);
         });
     }
-
     setPWMPin(args) {
         var value = args.PWM_VALUE;
         value = Math.min(value, 180);
