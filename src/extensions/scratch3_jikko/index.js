@@ -50,7 +50,7 @@ const BLEUUID = {
     set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
     set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
-    get_button: "d895d704-902e-11eb-a8b3-0242ac130003",
+    get_value: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
 
 class Jikko {
@@ -317,7 +317,7 @@ class Jikko {
     _onConnect() {
         this._ble.read(
             BLEUUID.get_service,
-            BLEUUID.get_button,
+            BLEUUID.get_value,
             true,
             this._onMessage
         );
@@ -334,7 +334,28 @@ class Jikko {
         this._battery.low_warning = data[2];
         this._user_button = data[3];
         */
-        this._user_button = data[0];
+        var dataCnt = 0;
+
+        for (var i = 0; i < this._sensors.digitals.length(); i++) {
+            this._sensors.digitals[i] = data[dataCnt++];
+        }
+        for (var i = 0; i < this._sensors.analogs.length(); i++) {
+            this._sensors.analogs[i] = data[dataCnt++];
+        }
+        for (var i = 0; i < this._sensors.dht.length(); i++) {
+            this._sensors.dht[i] = data[dataCnt++];
+        }
+        for (var i = 0; i < this._sensors.ultrasonic.length(); i++) {
+            this._sensors.ultrasonic[i] = data[dataCnt++];
+        }
+        for (var i = 0; i < this._sensors.gyro.length(); i++) {
+            this._sensors.gyro[i] = data[dataCnt++];
+        }
+        for (var i = 0; i < this._sensors.touch.length(); i++) {
+            this._sensors.touch[i] = data[dataCnt++];
+        }
+
+        //        this._user_button = data[0];
 
         // cancel disconnect timeout and start a new one
         window.clearInterval(this._timeoutID);
@@ -614,17 +635,109 @@ class Scratch3JikkoBlocks {
                 },
                 "---",
                 {
-                    opcode: "getDHTvalue",
+                    opcode: "getDigitalValue",
                     text: formatMessage({
-                        id: "jikko.getDHTvalue",
-                        default: "DHT11 온습도센서 [DHT_SELECT] 의 값",
+                        id: "jikko.getDigitalValue",
+                        default: "디지털 [DIGITAL_PIN] 핀 읽기",
+                        description: "",
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 0,
+                        },
+                    },
+                },
+                {
+                    opcode: "getAnalogValue",
+                    text: formatMessage({
+                        id: "jikko.getAnalogValue",
+                        default: "디지털 [ANALOG_SELECT] 핀 읽기",
                         description: "",
                     }),
                     blockType: BlockType.REPORTER,
                     arguments: {
+                        ANALOG_SELECT: {
+                            type: ArgumentType.STRING,
+                            menu: "ANALOG_SELECT",
+                            defaultValue: 0,
+                        },
+                    },
+                },
+                {
+                    opcode: "getUltrasonicValue",
+                    text: formatMessage({
+                        id: "jikko.getUltrasonicValue",
+                        default:
+                            "초음파 센서 trig [TRIG], echo [ECHO] 의 거리(cm)",
+                        description: "",
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        TRIG: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 0,
+                        },
+                        ECHO: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                {
+                    opcode: "getDHTvalue",
+                    text: formatMessage({
+                        id: "jikko.getDHTvalue",
+                        default:
+                            "DHT11 온습도센서 out [DIGITAL_PIN] [DHT_SELECT] 의 값",
+                        description: "",
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        DIGITAL_PIN: {
+                            type: ArgumentType.STRING,
+                            menu: "DIGITAL_PIN",
+                            defaultValue: 0,
+                        },
                         DHT_SELECT: {
                             type: ArgumentType.STRING,
                             menu: "DHT_SELECT",
+                            defaultValue: 0,
+                        },
+                    },
+                },
+                {
+                    opcode: "getGyroValue",
+                    text: formatMessage({
+                        id: "jikko.getGyroValue",
+                        default: "자이로센서 [GYRO_SELECT] 의 값",
+                        description: "",
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        GYRO_SELECT: {
+                            type: ArgumentType.STRING,
+                            menu: "GYRO_SELECT",
+                            defaultValue: 0,
+                        },
+                    },
+                },
+                {
+                    opcode: "getTouchValue",
+                    text: formatMessage({
+                        id: "jikko.getTouchValue",
+                        default: "터치센서 [TOUCH_SELECH] 의 터치 상태",
+                        description: "",
+                    }),
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        TOUCH_SELECH: {
+                            type: ArgumentType.STRING,
+                            menu: "TOUCH_SELECH",
                             defaultValue: 0,
                         },
                     },
@@ -894,6 +1007,14 @@ class Scratch3JikkoBlocks {
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
+                ANALOG_SELECT: [
+                    { text: "32", value: 32 },
+                    { text: "33", value: 33 },
+                    { text: "34", value: 34 },
+                    { text: "35", value: 35 },
+                    { text: "36", value: 36 },
+                    { text: "39", value: 39 },
+                ],
                 BUZZER_BEATS: [
                     { text: "4", value: 4 },
                     { text: "2", value: 2 },
@@ -908,6 +1029,26 @@ class Scratch3JikkoBlocks {
                 DIGITAL_TOGGLE: [
                     { text: "HIGH", value: 1 },
                     { text: "LOW", value: 0 },
+                ],
+                DHT_SELECT: [
+                    { text: "온도(°C)", value: 0 },
+                    { text: "습도(%)", value: 1 },
+                ],
+                GYRO_SELECT: [
+                    { text: "X", value: 0 },
+                    { text: "Y", value: 1 },
+                    { text: "Z", value: 2 },
+                ],
+                TOUCH_SELECH: [
+                    { text: "2", value: 2 },
+                    { text: "4", value: 4 },
+                    { text: "12", value: 12 },
+                    { text: "13", value: 13 },
+                    { text: "14", value: 14 },
+                    { text: "15", value: 15 },
+                    { text: "27", value: 27 },
+                    { text: "32", value: 32 },
+                    { text: "33", value: 33 },
                 ],
                 OLED_COLOR: [
                     { text: "흰색", value: "0" },
