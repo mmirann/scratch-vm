@@ -219,17 +219,22 @@ class Jikko {
         var send_data = [];
         send_data.push(cmd);
         if (cmd == 0 || cmd == 1) {
-            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+            return this.send(BLEUUID.set_service, BLEUUID.set_oled, send_data);
         }
         send_data.push(value1);
         send_data.push(value2);
         if (cmd == 2) {
-            return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+            return this.send(BLEUUID.set_service, BLEUUID.set_oled, send_data);
         } else if (cmd == 3) {
             send_data.push(textLen);
-            send_data.push(str);
+            for (var i = 0; i < textLen; i++) {
+                var charcode = str.charCodeAt(i);
+                if (charcode < 0x80)
+                    //ASCII 코드라면
+                    send_data.push(charcode);
+            }
         }
-        return this.send(BLEUUID.set_service, BLEUUID.set_lcd, send_data);
+        return this.send(BLEUUID.set_service, BLEUUID.set_oled, send_data);
     }
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
@@ -850,9 +855,9 @@ class Scratch3JikkoBlocks {
                     arguments: {},
                 },
                 {
-                    opcode: "setOLEDtext",
+                    opcode: "setOLEDTextTheme",
                     text: formatMessage({
-                        id: "jikko.setOLEDtext",
+                        id: "jikko.setOLEDTextTheme",
                         default:
                             "OLED 글씨 크기(1~21) [SIZE] 색상 [COLOR]로 설정",
                         description: "",
@@ -861,7 +866,7 @@ class Scratch3JikkoBlocks {
                     arguments: {
                         SIZE: {
                             type: ArgumentType.NUMBER,
-                            defaultValue: 0,
+                            defaultValue: 1,
                         },
                         COLOR: {
                             type: ArgumentType.NUMBER,
@@ -1149,8 +1154,8 @@ class Scratch3JikkoBlocks {
         });
     }
 
-    setOLEDText(args) {
-        this._peripheral.setOLEDText(2, value1, value2);
+    setOLEDTextTheme(args) {
+        this._peripheral.setOLEDText(2, args.SIZE, args.COLOR);
 
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -1166,8 +1171,8 @@ class Scratch3JikkoBlocks {
         if (textLen > 0) {
             this._peripheral.setOLEDText(
                 3,
-                args.COLUMN,
-                args.ROW,
+                parseInt(args.COLUMN),
+                parseInt(args.ROW),
                 textLen,
                 args.TEXT
             );
