@@ -38,8 +38,16 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
-d895dea2-902e-11eb-a8b3-0242ac130003
+
+7afd8140-a335-11eb-bcbc-0242ac130002
+7afd83e8-a335-11eb-bcbc-0242ac130002
+7afd84b0-a335-11eb-bcbc-0242ac130002
+7afd8564-a335-11eb-bcbc-0242ac130002
+7afd860e-a335-11eb-bcbc-0242ac130002
+7afd86c2-a335-11eb-bcbc-0242ac130002
+7afd8776-a335-11eb-bcbc-0242ac130002
 */
+
 const BLEUUID = {
     set_service: 0xc005,
     set_pin: "d895d7cc-902e-11eb-a8b3-0242ac130003",
@@ -49,6 +57,13 @@ const BLEUUID = {
     set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
     set_port: "d895ddee-902e-11eb-a8b3-0242ac130003",
     get_service: 0xc006,
+    get_digital: "d895dea2-902e-11eb-a8b3-0242ac130003",
+    get_analog: "d895dea2-902e-11eb-a8b3-0242ac130003",
+    get_ultrasonic: "7afd7d76-a335-11eb-bcbc-0242ac130002",
+    get_dht: "7afd7d76-a335-11eb-bcbc-0242ac130002",
+    get_gyro: "7afd7d76-a335-11eb-bcbc-0242ac130002",
+    get_touch: "7afd7f88-a335-11eb-bcbc-0242ac130002",
+    get_button: "7afd8078-a335-11eb-bcbc-0242ac130002",
     get_value: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
 
@@ -68,7 +83,7 @@ class Jikko {
 
         this._digital = 1;
         this._analog = 1;
-        this._dht = [0, 0];
+        this._dht = [1, 1];
         this._gyro = [0, 0, 0];
         this._ultrasonic = 1;
         this._touch = 1;
@@ -246,20 +261,73 @@ class Jikko {
 
     //0: digital 1: analog 2:dht 3:ultrasonic 4:gyro
     //  5:touch 6:button 7:button-pu
-    setPort(cmd, port1, port2) {
+    setDigital(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
-        if (cmd == 4)
-            return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
-
-        send_data.push(port1);
-        if (cmd == 3) {
-            send_data.push(port2);
-            return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
-        }
-
+        send_data.push(port);
         return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
     }
+    setAnalog(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+    setDHT(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+    setUltrasonic(cmd, port1, port2) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port1);
+        send_data.push(port2);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
+    setGyro(cmd) {
+        var send_data = [];
+        send_data.push(cmd);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
+    setTouch(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
+    setButton(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
+    setButtonPu(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    }
+
+    // setPort(cmd, port1, port2) {
+    //     var send_data = [];
+    //     send_data.push(cmd);
+    //     if (cmd == 4)
+    //         return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+
+    //     send_data.push(port1);
+    //     if (cmd == 3) {
+    //         send_data.push(port2);
+    //         return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    //     }
+
+    //     return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+    // }
 
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
@@ -352,24 +420,43 @@ class Jikko {
     }
     _onMessage(base64) {
         const data = Base64Util.base64ToUint8Array(base64);
-        /*
-        this._robot_is_moving = data[0];
-        this._battery.volt_level = data[1] / 10.0;
-        this._battery.low_warning = data[2];
-        this._user_button = data[3];
-        */
+
+        var temp_dht = [20, 20];
         console.log(data);
         this._digital = data[0];
-        this._analog = data[1];
-        this._dht[0] = data[2];
-        this._dht[1] = data[3];
-        this._gyro[0] = data[4];
-        this._gyro[1] = data[5];
-        this._gyro[2] = data[6];
-        this._ultrasonic = data[7];
-        this._touch = data[8];
-        this.__button = data[9];
-        this.__buttonpu = data[10];
+
+        _analog = ((data[2] << 8) + data[1]) & 0xffff;
+        if (_analog & 0x8000) {
+            _analog = _analog - 0x10000;
+        }
+        this._analog = _analog;
+
+        const buffer = new Uint8Array([data[3], data[4], data[5], data[6]])
+            .buffer;
+        const view = new DataView(buffer);
+
+        temp_dht[0] = view.getFloat32(0, true).toFixed(2);
+
+        if (temp_dht[0] != -999 && temp_dht[0] != 0) {
+            this._dht[0] = temp_dht[0];
+        }
+        const buffer1 = new Uint8Array([data[7], data[8], data[9], data[10]])
+            .buffer;
+        const view1 = new DataView(buffer1);
+
+        temp_dht[1] = view1.getFloat32(0, true).toFixed(2);
+
+        if (temp_dht[1] != -999 && temp_dht[1] != 0) {
+            this._dht[1] = temp_dht[1];
+        }
+        // this._dht[1] = data[6];
+        // this._gyro[0] = data[5];
+        // this._gyro[1] = data[6];
+        // this._gyro[2] = data[7];
+        // this._ultrasonic = data[8];
+        // this._touch = data[9];
+        // this.__button = data[10];
+        // this.__buttonpu = data[11];
 
         // cancel disconnect timeout and start a new one
         window.clearInterval(this._timeoutID);
@@ -668,7 +755,7 @@ class Scratch3JikkoBlocks {
                     opcode: "getAnalogValue",
                     text: formatMessage({
                         id: "jikko.getAnalogValue",
-                        default: "디지털 [ANALOG_SELECT] 핀 읽기",
+                        default: "아날로그 [ANALOG_SELECT] 핀 읽기",
                         description: "",
                     }),
                     blockType: BlockType.REPORTER,
@@ -1066,12 +1153,9 @@ class Scratch3JikkoBlocks {
                 ],
                 TOUCH_SELECH: [
                     { text: "2", value: 2 },
-                    { text: "4", value: 4 },
-                    { text: "12", value: 12 },
                     { text: "13", value: 13 },
                     { text: "14", value: 14 },
                     { text: "15", value: 15 },
-                    { text: "27", value: 27 },
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
