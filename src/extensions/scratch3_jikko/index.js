@@ -39,10 +39,6 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
 
 /*
 
-7afd8140-a335-11eb-bcbc-0242ac130002
-7afd83e8-a335-11eb-bcbc-0242ac130002
-7afd84b0-a335-11eb-bcbc-0242ac130002
-7afd8564-a335-11eb-bcbc-0242ac130002
 7afd860e-a335-11eb-bcbc-0242ac130002
 7afd86c2-a335-11eb-bcbc-0242ac130002
 7afd8776-a335-11eb-bcbc-0242ac130002
@@ -55,15 +51,16 @@ const BLEUUID = {
     set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
     set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
     set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
-    set_port: "d895ddee-902e-11eb-a8b3-0242ac130003",
+    //set_port: "d895ddee-902e-11eb-a8b3-0242ac130003",
+    set_digital_port: "d895dea2-902e-11eb-a8b3-0242ac130003",
+    set_analog_port: "7afd83e8-a335-11eb-bcbc-0242ac130002",
+    set_ultrasonic_port: "7afd7d76-a335-11eb-bcbc-0242ac130002",
+    set_dht_port: "7afd84b0-a335-11eb-bcbc-0242ac130002",
+    set_gyro_port: "7afd8564-a335-11eb-bcbc-0242ac130002",
+    set_touch_port: "7afd7f88-a335-11eb-bcbc-0242ac130002",
+    set_button_port: "7afd8078-a335-11eb-bcbc-0242ac130002",
+    set_button_pu_port: "7afd8140-a335-11eb-bcbc-0242ac130002",
     get_service: 0xc006,
-    get_digital: "d895dea2-902e-11eb-a8b3-0242ac130003",
-    get_analog: "d895dea2-902e-11eb-a8b3-0242ac130003",
-    get_ultrasonic: "7afd7d76-a335-11eb-bcbc-0242ac130002",
-    get_dht: "7afd7d76-a335-11eb-bcbc-0242ac130002",
-    get_gyro: "7afd7d76-a335-11eb-bcbc-0242ac130002",
-    get_touch: "7afd7f88-a335-11eb-bcbc-0242ac130002",
-    get_button: "7afd8078-a335-11eb-bcbc-0242ac130002",
     get_value: "d895d704-902e-11eb-a8b3-0242ac130003",
 };
 
@@ -172,7 +169,7 @@ class Jikko {
         // 1.set_brightness: value=brightness
         if (cmd == 0 || cmd == 1) {
             send_data.push(value);
-            console.log(send_data);
+            //console.log(send_data);
             return this.send(
                 BLEUUID.set_service,
                 BLEUUID.set_neopixel,
@@ -206,7 +203,7 @@ class Jikko {
             send_data.push(num);
         }
 
-        console.log(send_data);
+        // console.log(send_data);
         return this.send(BLEUUID.set_service, BLEUUID.set_neopixel, send_data);
     }
 
@@ -265,53 +262,79 @@ class Jikko {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_digital_port,
+            send_data
+        );
     }
     setAnalog(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        //    console.log("SETDANALOG");
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_analog_port,
+            send_data
+        );
     }
     setDHT(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        //     console.log("SETDHT");
+        return this.send(BLEUUID.set_service, BLEUUID.set_dht_port, send_data);
     }
     setUltrasonic(cmd, port1, port2) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port1);
         send_data.push(port2);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_ultrasonic_port,
+            send_data
+        );
     }
 
     setGyro(cmd) {
         var send_data = [];
         send_data.push(cmd);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(BLEUUID.set_service, BLEUUID.set_gyro_port, send_data);
     }
 
     setTouch(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_touch_port,
+            send_data
+        );
     }
 
     setButton(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_button_port,
+            send_data
+        );
     }
 
     setButtonPu(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
-        return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_button_pu_port,
+            send_data
+        );
     }
 
     // setPort(cmd, port1, port2) {
@@ -331,19 +354,22 @@ class Jikko {
 
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
-        if (this._busy) return;
-
+        // if (this._busy) {
+        //     console.log("SENDBUSY");
+        //     return;
+        // }
         // Set a busy flag so that while we are sending a message and waiting for
         // the response, additional messages are ignored.
-        this._busy = true;
+        // this._busy = true;
 
         // Set a timeout after which to reset the busy flag. This is used in case
         // a BLE message was sent for which we never received a response, because
         // e.g. the peripheral was turned off after the message was sent. We reset
         // the busy flag after a while so that it is possible to try again later.
-        this._busyTimeoutID = window.setTimeout(() => {
-            this._busy = false;
-        }, 5000);
+
+        // this._busyTimeoutID = window.setTimeout(() => {
+        //     this._busy = false;
+        // }, 5000);
 
         const data = Base64Util.uint8ArrayToBase64(value);
         this._ble
@@ -422,7 +448,7 @@ class Jikko {
         const data = Base64Util.base64ToUint8Array(base64);
 
         var temp_dht = [20, 20];
-        console.log(data);
+        //console.log(data);
         this._digital = data[0];
 
         _analog = ((data[2] << 8) + data[1]) & 0xffff;
@@ -1008,7 +1034,7 @@ class Scratch3JikkoBlocks {
                         default: "LCD [COLUMN] 열 [ROW] 행 부터 [TEXT] 출력",
                         description: "",
                     }),
-                    blockType: BlockType.COMMAND,
+                    blockType: BlockType.COMMFdAND,
                     arguments: {
                         COLUMN: {
                             type: ArgumentType.NUMBER,
@@ -1168,18 +1194,21 @@ class Scratch3JikkoBlocks {
     }
 
     getDigitalValue(args) {
-        this._peripheral.setPort(0, args.DIGITAL_PIN);
+        this._peripheral.setDigital(0, args.DIGITAL_PIN);
+
         return this._peripheral._digital;
     }
 
     getAnalogValue(args) {
-        this._peripheral.setPort(1, args.ANALOG_SELECT);
+        this._peripheral.setAnalog(1, args.ANALOG_SELECT);
+        // console.log("ANALOG");
+
         return this._peripheral._analog;
     }
 
     getDHTvalue(args) {
-        this._peripheral.setPort(2, args.DIGITAL_PIN);
-
+        this._peripheral.setDHT(2, args.DIGITAL_PIN);
+        //    console.log("DHT");
         if (args.DHT_SELECT == 0) {
             return this._peripheral._dht[0];
         } else if (args.DHT_SELECT == 1) {
@@ -1187,11 +1216,11 @@ class Scratch3JikkoBlocks {
         }
     }
     getUltrasonicValue(args) {
-        this._peripheral.setPort(3, args.TRIG, args.ECHO);
+        this._peripheral.setUltrasonic(3, args.TRIG, args.ECHO);
         return this._peripheral._ultrasonic;
     }
     getGyroValue(args) {
-        this._peripheral.setPort(4);
+        this._peripheral.setGyro(4);
         if (args.GYRO_SELECT == 0) {
             return this._peripheral._gyro[0];
         } else if (args.GYRO_SELECT == 1) {
@@ -1202,24 +1231,24 @@ class Scratch3JikkoBlocks {
     }
 
     getTouchValue(args) {
-        this._peripheral.setPort(5, args.DIGITAL_PIN);
+        this._peripheral.setTouch(5, args.DIGITAL_PIN);
         return this._peripheral._touch;
     }
 
     isButtonPressed(args) {
-        this._peripheral.setPort(6, args.DIGITAL_PIN);
+        this._peripheral.setButton(6, args.DIGITAL_PIN);
 
         return this._peripheral._button;
     }
 
     isButtonPressedpm(args) {
-        this._peripheral.setPort(7, args.DIGITAL_PIN);
+        this._peripheral.setButtonPu(7, args.DIGITAL_PIN);
         return this._peripheral._buttnpu;
     }
 
     setDigitalPin(args) {
         this._peripheral.setPin(0, args.DIGITAL_PIN, args.DIGITAL_TOGGLE);
-
+        //   console.log("SETDIGITAL");
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
@@ -1369,7 +1398,7 @@ class Scratch3JikkoBlocks {
     }
     setAllNeo(args) {
         this._peripheral.setLEDLamp(3, args.DIGITAL_PIN, args.ALL_COLOR);
-
+        //   console.log("SETNEO");
         return new Promise((resolve) => {
             setTimeout(() => {
                 resolve();
