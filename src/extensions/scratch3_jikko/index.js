@@ -475,7 +475,12 @@ class Jikko {
         if (temp_dht[1] != -999 && temp_dht[1] != 0) {
             this._dht[1] = temp_dht[1];
         }
-        // this._dht[1] = data[6];
+        const buffer2 = new Uint8Array([data[11], data[12], data[13], data[14]])
+            .buffer;
+        const view2 = new DataView(buffer2);
+
+        this._ultrasonic = view2.getFloat32(0, true).toFixed(2);
+
         // this._gyro[0] = data[5];
         // this._gyro[1] = data[6];
         // this._gyro[2] = data[7];
