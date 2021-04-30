@@ -38,7 +38,10 @@ const BLEDataStoppedError = "jikko extension stopped receiving data";
  */
 
 /*
+BLUETOOTH 통신을 위해 센서 동작마다 UUID를 설정
+추가 UUID가 필요한 경우: https://www.uuidgenerator.net/ 접속 
 
+사용안한 UUID:
 7afd860e-a335-11eb-bcbc-0242ac130002
 7afd86c2-a335-11eb-bcbc-0242ac130002
 7afd8776-a335-11eb-bcbc-0242ac130002
@@ -51,7 +54,6 @@ const BLEUUID = {
     set_buzzer: "d895d952-902e-11eb-a8b3-0242ac130003",
     set_lcd: "d895dc2c-902e-11eb-a8b3-0242ac130003",
     set_oled: "d895dd30-902e-11eb-a8b3-0242ac130003",
-    //set_port: "d895ddee-902e-11eb-a8b3-0242ac130003",
     set_digital_port: "d895dea2-902e-11eb-a8b3-0242ac130003",
     set_analog_port: "7afd83e8-a335-11eb-bcbc-0242ac130002",
     set_ultrasonic_port: "7afd7d76-a335-11eb-bcbc-0242ac130002",
@@ -78,6 +80,7 @@ class Jikko {
          */
         this._runtime = runtime;
 
+        //센서 값 초기화
         this._digital = 1;
         this._analog = 1;
         this._dht = [1, 1];
@@ -122,14 +125,6 @@ class Jikko {
         this._onConnect = this._onConnect.bind(this);
         this._onMessage = this._onMessage.bind(this);
     }
-
-    // get userButton() {
-    //     if (this._user_button == 0) {
-    //         return false;
-    //     } else {
-    //         return true;
-    //     }
-    // }
 
     /*
     0. digital: cmd, pin, value
@@ -338,23 +333,9 @@ class Jikko {
         );
     }
 
-    // setPort(cmd, port1, port2) {
-    //     var send_data = [];
-    //     send_data.push(cmd);
-    //     if (cmd == 4)
-    //         return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
-
-    //     send_data.push(port1);
-    //     if (cmd == 3) {
-    //         send_data.push(port2);
-    //         return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
-    //     }
-
-    //     return this.send(BLEUUID.set_service, BLEUUID.set_port, send_data);
-    // }
-
     send(service, characteristic, value) {
         if (!this.isConnected()) return;
+        // busy 활성화하면 GET해오는 센서 값들이 기다리기 블록 없이 작동하지 않음, BUSY로 처리됨
         // if (this._busy) {
         //     console.log("SENDBUSY");
         //     return;
@@ -448,16 +429,19 @@ class Jikko {
     _onMessage(base64) {
         const data = Base64Util.base64ToUint8Array(base64);
 
+        //보드로부터 받아온 데이터를 가공함
+
         var temp_dht = [20, 20];
-        //console.log(data);
         this._digital = data[0];
 
+        //analog값은 두바이트로 나눠서 들어오므로 다시 합쳐줌
         _analog = ((data[2] << 8) + data[1]) & 0xffff;
         if (_analog & 0x8000) {
             _analog = _analog - 0x10000;
         }
         this._analog = _analog;
 
+        //DHT 온습도, 초음파 센서는 Float(4바이트)이므로 하나의 변수로 합쳐줌
         const buffer = new Uint8Array([data[3], data[4], data[5], data[6]])
             .buffer;
         const view = new DataView(buffer);
@@ -467,6 +451,8 @@ class Jikko {
         if (temp_dht[0] != -999 && temp_dht[0] != 0) {
             this._dht[0] = temp_dht[0];
         }
+
+        //DHT 습도
         const buffer1 = new Uint8Array([data[7], data[8], data[9], data[10]])
             .buffer;
         const view1 = new DataView(buffer1);
@@ -476,6 +462,8 @@ class Jikko {
         if (temp_dht[1] != -999 && temp_dht[1] != 0) {
             this._dht[1] = temp_dht[1];
         }
+
+        //초음파 센서 값
         const buffer2 = new Uint8Array([data[11], data[12], data[13], data[14]])
             .buffer;
         const view2 = new DataView(buffer2);
