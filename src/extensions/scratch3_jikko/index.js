@@ -308,6 +308,7 @@ class Jikko {
         var send_data = [];
         send_data.push(cmd);
         send_data.push(port);
+        //console.log(send_data);
         return this.send(
             BLEUUID.set_service,
             BLEUUID.set_touch_port,
@@ -480,12 +481,12 @@ class Jikko {
         const view2 = new DataView(buffer2);
 
         this._ultrasonic = view2.getFloat32(0, true).toFixed(2);
+        this._touch = data[15];
 
         // this._gyro[0] = data[5];
         // this._gyro[1] = data[6];
         // this._gyro[2] = data[7];
         // this._ultrasonic = data[8];
-        // this._touch = data[9];
         // this.__button = data[10];
         // this.__buttonpu = data[11];
 
@@ -1183,10 +1184,9 @@ class Scratch3JikkoBlocks {
                     { text: "Z", value: 2 },
                 ],
                 TOUCH_SELECH: [
-                    { text: "2", value: 2 },
+                    { text: "4", value: 4 },
                     { text: "13", value: 13 },
                     { text: "14", value: 14 },
-                    { text: "15", value: 15 },
                     { text: "32", value: 32 },
                     { text: "33", value: 33 },
                 ],
@@ -1236,8 +1236,10 @@ class Scratch3JikkoBlocks {
     }
 
     getTouchValue(args) {
-        this._peripheral.setTouch(5, args.DIGITAL_PIN);
-        return this._peripheral._touch;
+        this._peripheral.setTouch(5, args.TOUCH_SELECH);
+        var touch_value = this._peripheral._touch;
+        console.log(touch_value);
+        return touch_value > 30 ? false : true;
     }
 
     isButtonPressed(args) {
