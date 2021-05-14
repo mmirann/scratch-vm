@@ -84,8 +84,9 @@ class Jikko {
         this._digital = 1;
         this._analog = 1;
         this._dht = [1, 1];
-        this._gyro = [0, 0, 0];
+        this._gyro = [0.0, 0.0, 0.0];
         this._ultrasonic = 1;
+        this._light = 1;
         this._touch = 1;
         this._button = 1;
         this._buttnpu = 1;
@@ -252,7 +253,7 @@ class Jikko {
     }
 
     //0: digital 1: analog 2:dht 3:ultrasonic 4:gyro
-    //  5:touch 6:button 7:button-pu
+    //  5:touch 6:button 7:button-pu (8:Light)
     setDigital(cmd, port) {
         var send_data = [];
         send_data.push(cmd);
@@ -289,6 +290,16 @@ class Jikko {
         return this.send(
             BLEUUID.set_service,
             BLEUUID.set_ultrasonic_port,
+            send_data
+        );
+    }
+    setLight(cmd, port) {
+        var send_data = [];
+        send_data.push(cmd);
+        send_data.push(port);
+        return this.send(
+            BLEUUID.set_service,
+            BLEUUID.set_analog_port,
             send_data
         );
     }
@@ -470,6 +481,24 @@ class Jikko {
 
         this._ultrasonic = view2.getFloat32(0, true).toFixed(2);
         this._touch = data[15];
+
+        _gyro_x = ((data[17] << 8) + data[16]) & 0xffff;
+        if (_gyro_x & 0x8000) {
+            _gyro_x = _gyro_x - 0x10000;
+        }
+        this._gyro[0] = _gyro_x / 100.0;
+
+        _gyro_y = ((data[19] << 8) + data[18]) & 0xffff;
+        if (_gyro_y & 0x8000) {
+            _gyro_y = _gyro_y - 0x10000;
+        }
+        this._gyro[1] = _gyro_y / 100.0;
+
+        _gyro_z = ((data[21] << 8) + data[20]) & 0xffff;
+        if (_gyro_z & 0x8000) {
+            _gyro_z = _gyro_z - 0x10000;
+        }
+        this._gyro[2] = _gyro_z / 100.0;
 
         // this._gyro[0] = data[5];
         // this._gyro[1] = data[6];
@@ -783,7 +812,7 @@ class Scratch3JikkoBlocks {
                         ANALOG_SELECT: {
                             type: ArgumentType.STRING,
                             menu: "ANALOG_SELECT",
-                            defaultValue: 4,
+                            defaultValue: 32,
                         },
                     },
                 },
@@ -828,6 +857,22 @@ class Scratch3JikkoBlocks {
                             type: ArgumentType.STRING,
                             menu: "DHT_SELECT",
                             defaultValue: 0,
+                        },
+                    },
+                },
+                {
+                    opcode: "getLightValue",
+                    text: formatMessage({
+                        id: "jikko.getLightValue",
+                        default: "조도센서 [ANALOG_SELECT] 핀 읽기",
+                        description: "",
+                    }),
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        ANALOG_SELECT: {
+                            type: ArgumentType.STRING,
+                            menu: "ANALOG_SELECT",
+                            defaultValue: 32,
                         },
                     },
                 },
@@ -1193,6 +1238,13 @@ class Scratch3JikkoBlocks {
     }
 
     getAnalogValue(args) {
+        this._peripheral.setAnalog(1, args.ANALOG_SELECT);
+        // console.log("ANALOG");
+
+        return this._peripheral._analog;
+    }
+
+    getLightValue(args) {
         this._peripheral.setAnalog(1, args.ANALOG_SELECT);
         // console.log("ANALOG");
 
